@@ -1,0 +1,68 @@
+const express = require('express');
+const fs = require('fs');
+const crypto = require('crypto');
+const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+function classifyAttack(req) {
+  const payload = JSON.stringify(req.body) + req.originalUrl;
+
+  if (/('|--|;|\bOR\b|\bAND\b)/i.test(payload)) return "SQL Injection";
+  if (/<script>|onerror=|onload=/i.test(payload)) return "XSS";
+  if (/(\.\.\/|%2e%2e%2f)/i.test(payload)) return "Directory Traversal";
+  if (/(\bwget\b|\bcurl\b|\bchmod\b|\brm\b)/i.test(payload)) return "Command Injection";
+  if (req.method === "POST") return "Credential Brute Force";
+
+  return "Reconnaissance";
+}
+
+function fakeToken() {
+  return crypto.randomBytes(24).toString('hex');
+}
+
+function handleRequest(req, res) {
+  const attackType = classifyAttack(req);
+
+  const log = {
+    service: "web",
+    time: new Date().toISOString(),
+    ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+    method: req.method,
+    url: req.originalUrl,
+    headers: req.headers,
+    body: req.body,
+    attack_type: attackType
+  };
+
+  fs.appendFileSync('/logs/web.log', JSON.stringify(log) + '\n');
+
+  setTimeout(() => {
+    // 20% fake success
+    if (Math.random() < 0.2 && req.method === "POST") {
+      res.status(200).json({
+        message: "Login successful",
+        token: fakeToken()
+      });
+    } else {
+      res.status(401).send("Invalid username or password");
+    }
+  }, 1200);
+}
+
+// Sensitive paths
+[
+  '/admin',
+  '/login',
+  '/.env',
+  '/config',
+  '/backup.zip',
+  '/phpmyadmin'
+].forEach(path => app.all(path, handleRequest));
+
+// Catch everything
+app.all('*', handleRequest);
+
+app.listen(3000);
+

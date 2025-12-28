@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+  web-honeypot :
+    build: ./web-honeypot
+    ports:
+      - "80:3000"
+    volumes:
+      - ./logs:/logs
+    
+  api-honeypot:
+    build: ./api-honeypot
+    ports:
+      - "8080:4000"
+    volumes:
+      - ./logs:/logs
+  cowrie:
+      image: cowrie/cowrie
+      ports:
+        - "22:2222"
+      volumes:
+        - ./logs:/cowrie/cowrie-git/var/log/cowrie
