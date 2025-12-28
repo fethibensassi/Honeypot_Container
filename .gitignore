@@ -138,9 +138,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Honeypot logs
-logs/
-
 # Cowrie honeypot data
 cowrie/data/
 cowrie/var/
