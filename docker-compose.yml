@@ -5,6 +5,8 @@ services:
     build: ./web-honeypot
     ports:
       - "80:3000"
+    depends_on:
+      - dummy-db
     volumes:
       - ./logs:/logs
     
@@ -12,6 +14,8 @@ services:
     build: ./api-honeypot
     ports:
       - "8080:4000"
+    depends_on:
+      - dummy-db
     volumes:
       - ./logs:/logs
   cowrie:
@@ -20,3 +24,15 @@ services:
         - "22:2222"
       volumes:
         - ./logs:/cowrie/cowrie-git/var/log/cowrie
+
+  dummy-db:
+      image: mongo:6
+      container_name: dummy-db
+      environment:
+        MONGO_INITDB_ROOT_USERNAME: admin
+        MONGO_INITDB_ROOT_PASSWORD: admin123
+      ports:
+        - "27017:27017"
+      volumes:
+        - ./logs/db.log:/var/log/mongodb.log
+      command: ["mongod", "--logpath", "/var/log/mongodb.log", "--bind_ip_all"]
